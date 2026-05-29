@@ -49,7 +49,12 @@ class GmailClient:
         self.service = service
 
     @classmethod
-    def from_oauth_files(cls, credentials_path: str, token_path: str) -> "GmailClient":
+    def from_oauth_files(
+        cls,
+        credentials_path: str,
+        token_path: str,
+        allow_interactive_auth: bool = True,
+    ) -> "GmailClient":
         try:
             from google.auth.transport.requests import Request
             from google.oauth2.credentials import Credentials
@@ -69,6 +74,13 @@ class GmailClient:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
+                if not allow_interactive_auth:
+                    raise GmailClientError(
+                        "Gmail token is missing or cannot be refreshed and interactive OAuth is "
+                        "disabled (ALLOW_INTERACTIVE_AUTH=false). Generate a valid token.json "
+                        "locally and provide it (e.g. via the GMAIL_TOKEN_JSON secret) before "
+                        "running in a non-interactive environment such as CI."
+                    )
                 if not credentials_file.exists():
                     raise GmailClientError(f"Missing OAuth credentials file: {credentials_file}")
                 flow = InstalledAppFlow.from_client_secrets_file(str(credentials_file), GMAIL_SCOPES)

@@ -13,8 +13,9 @@ jobs:
     env:
       GMAIL_LABEL_ALLOWLIST: ${{ vars.GMAIL_LABEL_ALLOWLIST }}
       SUMMARY_RECIPIENT_EMAIL: ${{ vars.SUMMARY_RECIPIENT_EMAIL }}
-      RUN_MODE: ${{ vars.RUN_MODE }}
-      DELETE_AFTER_SUCCESS: ${{ vars.DELETE_AFTER_SUCCESS }}
+      RUN_MODE: ${{ vars.RUN_MODE || 'dry_run' }}
+      DELETE_AFTER_SUCCESS: ${{ vars.DELETE_AFTER_SUCCESS || 'false' }}
+      ALLOW_INTERACTIVE_AUTH: "false"
       MAX_EMAILS_PER_RUN: ${{ vars.MAX_EMAILS_PER_RUN }}
       MAX_LINKS_PER_EMAIL: ${{ vars.MAX_LINKS_PER_EMAIL }}
       SUMMARY_TIME_WINDOW: ${{ vars.SUMMARY_TIME_WINDOW }}
@@ -39,8 +40,14 @@ jobs:
           GMAIL_CREDENTIALS_JSON: ${{ secrets.GMAIL_CREDENTIALS_JSON }}
           GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
         run: |
-          test -n "$GMAIL_CREDENTIALS_JSON"
-          test -n "$GMAIL_TOKEN_JSON"
+          if [ -z "$GMAIL_CREDENTIALS_JSON" ]; then
+            echo "::error::Secret GMAIL_CREDENTIALS_JSON is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$GMAIL_TOKEN_JSON" ]; then
+            echo "::error::Secret GMAIL_TOKEN_JSON is not set. Generate token.json locally (run the app once in dry_run) and store its contents as this secret."
+            exit 1
+          fi
           printf '%s' "$GMAIL_CREDENTIALS_JSON" > credentials.json
           printf '%s' "$GMAIL_TOKEN_JSON" > token.json
 

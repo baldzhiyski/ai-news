@@ -42,6 +42,7 @@ class Settings:
     request_timeout_seconds: float = 10.0
     max_article_bytes: int = 1_000_000
     log_level: str = "INFO"
+    allow_interactive_auth: bool = True
 
     @property
     def is_dry_run(self) -> bool:
@@ -117,6 +118,7 @@ def settings_from_env(env: Mapping[str, str] | None = None) -> Settings:
             _env_value(env, "MAX_ARTICLE_BYTES", "1000000"), "MAX_ARTICLE_BYTES"
         ),
         log_level=_env_value(env, "LOG_LEVEL", "INFO").strip().upper(),
+        allow_interactive_auth=_parse_bool(_env_value(env, "ALLOW_INTERACTIVE_AUTH", "true")),
     )
     settings.validate()
     return settings

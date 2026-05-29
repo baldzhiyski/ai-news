@@ -16,6 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def run() -> int:
+    _force_utf8_streams()
     load_dotenv_file()
     try:
         settings = settings_from_env()
@@ -32,6 +33,7 @@ def run() -> int:
         client = GmailClient.from_oauth_files(
             settings.gmail_credentials_path,
             settings.gmail_token_path,
+            allow_interactive_auth=settings.allow_interactive_auth,
         )
         label_map = resolve_allowlisted_labels(settings.gmail_label_allowlist, client.list_labels())
         allowed_label_ids = set(label_map.values())
@@ -150,6 +152,22 @@ def _fetch_articles(
                 articles.append(result)
     LOGGER.info("Fetched %d useful links; ignored %d links.", len(articles), len(ignored))
     return articles, ignored
+
+
+def _force_utf8_streams() -> None:
+    """Ensure stdout/stderr can emit the report's emoji and em-dashes.
+
+    On Windows the console often uses a legacy code page (e.g. cp1251) that
+    cannot encode characters in the brief, which would otherwise crash the
+    dry-run print and any logging of message subjects.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
 
 
 def _configure_logging(level: str) -> None:
