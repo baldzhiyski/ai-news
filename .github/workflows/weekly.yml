@@ -1,0 +1,48 @@
+name: Weekly AI News Brief
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  weekly-brief:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GMAIL_LABEL_ALLOWLIST: ${{ vars.GMAIL_LABEL_ALLOWLIST }}
+      SUMMARY_RECIPIENT_EMAIL: ${{ vars.SUMMARY_RECIPIENT_EMAIL }}
+      RUN_MODE: ${{ vars.RUN_MODE }}
+      DELETE_AFTER_SUCCESS: ${{ vars.DELETE_AFTER_SUCCESS }}
+      MAX_EMAILS_PER_RUN: ${{ vars.MAX_EMAILS_PER_RUN }}
+      MAX_LINKS_PER_EMAIL: ${{ vars.MAX_LINKS_PER_EMAIL }}
+      SUMMARY_TIME_WINDOW: ${{ vars.SUMMARY_TIME_WINDOW }}
+      GMAIL_CREDENTIALS_PATH: credentials.json
+      GMAIL_TOKEN_PATH: token.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Write Gmail OAuth files
+        env:
+          GMAIL_CREDENTIALS_JSON: ${{ secrets.GMAIL_CREDENTIALS_JSON }}
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+        run: |
+          test -n "$GMAIL_CREDENTIALS_JSON"
+          test -n "$GMAIL_TOKEN_JSON"
+          printf '%s' "$GMAIL_CREDENTIALS_JSON" > credentials.json
+          printf '%s' "$GMAIL_TOKEN_JSON" > token.json
+
+      - name: Run weekly brief
+        run: python -m src.main
