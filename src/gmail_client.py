@@ -56,6 +56,7 @@ class GmailClient:
         allow_interactive_auth: bool = True,
     ) -> "GmailClient":
         try:
+            from google.auth.exceptions import RefreshError
             from google.auth.transport.requests import Request
             from google.oauth2.credentials import Credentials
             from google_auth_oauthlib.flow import InstalledAppFlow
@@ -72,7 +73,14 @@ class GmailClient:
             creds = Credentials.from_authorized_user_file(str(token_file), GMAIL_SCOPES)
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                except RefreshError as exc:
+                    raise GmailClientError(
+                        "Gmail token refresh failed (token may be expired or revoked). "
+                        "Regenerate token.json locally and update the GMAIL_TOKEN_JSON secret "
+                        "before running in CI."
+                    ) from exc
             else:
                 if not allow_interactive_auth:
                     raise GmailClientError(

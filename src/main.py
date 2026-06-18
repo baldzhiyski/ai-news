@@ -35,6 +35,11 @@ def run() -> int:
             settings.gmail_token_path,
             allow_interactive_auth=settings.allow_interactive_auth,
         )
+    except GmailClientError as exc:
+        LOGGER.error("Gmail authentication unavailable: %s", exc)
+        return 3
+
+    try:
         label_map = resolve_allowlisted_labels(settings.gmail_label_allowlist, client.list_labels())
         allowed_label_ids = set(label_map.values())
         window = settings.time_window()
