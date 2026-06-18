@@ -74,6 +74,7 @@ In live mode, the service sends the report first. Only after Gmail confirms the 
 ## Weekly Scheduling
 
 This repository includes `.github/workflows/weekly.yml`, scheduled for Mondays at 08:00 UTC. It runs tests first, then runs the service. Keep the workflow in `dry_run` until repository secrets and variables are configured and a dry run has been reviewed.
+If Gmail authentication is unavailable (for example an expired or revoked `GMAIL_TOKEN_JSON` secret), the workflow emits a warning and skips that run instead of failing the whole job.
 
 Required GitHub secrets:
 

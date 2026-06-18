@@ -52,4 +52,11 @@ jobs:
           printf '%s' "$GMAIL_TOKEN_JSON" > token.json
 
       - name: Run weekly brief
-        run: python -m src.main
+        run: |
+          python -m src.main
+          status=$?
+          if [ "$status" -eq 3 ]; then
+            echo "::warning::Skipping weekly brief because Gmail authentication is unavailable (likely expired/revoked token secret)."
+            exit 0
+          fi
+          exit "$status"
