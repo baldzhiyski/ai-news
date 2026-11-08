@@ -53,8 +53,9 @@ jobs:
 
       - name: Run weekly brief
         run: |
-          python -m src.main
-          status=$?
+          # Actions runs this with `bash -e`, which would stop on a non-zero exit before the check below.
+          status=0
+          python -m src.main || status=$?
           if [ "$status" -eq 3 ]; then
             echo "::warning::Skipping weekly brief because Gmail authentication is unavailable (likely expired/revoked token secret)."
             exit 0
